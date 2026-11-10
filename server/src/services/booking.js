@@ -1,7 +1,7 @@
 // Job lifecycle: request -> worker accepts & quotes -> price agreed in chat ->
 // customer confirms ONE worker -> in progress -> completed (or cancelled).
 import { db, newId } from '../db/index.js';
-import { JOB_STATUS, PROPOSAL_STATUS } from '../../../shared/index.js';
+import { JOB_STATUS, PROPOSAL_STATUS, getArea, getCategory, DEFAULT_JOB_HOURS } from '../../../shared/index.js';
 import { badRequest, conflict, forbidden, notFound } from '../utils/http.js';
 import { engagedJobsFor, canTakeJob, jobSlot, findConflict } from './availability.js';
 import { postMessage, systemMessage } from './chat.js';
@@ -240,4 +240,80 @@ export async function cancelJob(user, jobId, reason = '') {
     await notify(p.workerId, 'customer_cancelled', { name: user.name, title: job.title }, `/chat/${p.id}`);
   }
   return cancelled;
+}
+
+// Customer books a worker straight from the worker's profile after agreeing a
+// price in chat. Creates the job already confirmed, with the same free-time
+// checks as the request flow, and turns the profile chat into the booking chat.
+export async function bookDirect(customer, workerId, input = {}) {
+  const worker = await db.users.findById(workerId);
+  if (!worker || worker.role !== 'worker' || !worker.profileComplete) throw notFound('worker_not_found', 'Worker not found');
+
+  const price = Math.round(Number(input.price));
+  if (!(price >= 100 && price <= 500000)) throw badRequest('bad_amount', 'Enter the agreed price (Rs 100 or more)');
+  const category = (worker.skills || []).includes(input.category) ? input.category : worker.skills[0];
+  const area = getArea(input.area) || getArea(customer.location?.area);
+  if (!area) throw badRequest('no_location', 'Choose where the work is');
+  const when = input.when === 'scheduled' ? 'scheduled' : 'now';
+  const startAt = when === 'scheduled' ? new Date(input.scheduledAt) : new Date();
+  if (Number.isNaN(startAt.getTime())) throw badRequest('bad_time', 'Choose a valid date and time');
+  if (when === 'scheduled' && startAt.getTime() < Date.now() - 5 * 60 * 1000) throw badRequest('past_time', 'Choose a time in the future');
+
+  const description = String(input.description || '').trim().slice(0, 2000) || getCategory(category).names.en;
+  const nowIso = new Date().toISOString();
+  const draft = {
+    id: newId('j_'),
+    customerId: customer.id,
+    category,
+    title: description.split(/[.!?\n۔]/)[0].slice(0, 80) || getCategory(category).names.en,
+    description,
+    descriptionLang: '',
+    voiceUrl: '',
+    images: [],
+    location: { area: area.key, city: area.city, lat: area.lat, lng: area.lng, address: String(input.address || customer.location?.address || '').slice(0, 200), source: 'saved' },
+    when,
+    scheduledAt: startAt.toISOString(),
+    durationHours: DEFAULT_JOB_HOURS,
+    budget: null,
+    ai: null,
+    createdAt: nowIso,
+    updatedAt: nowIso,
+  };
+
+  // Same availability rules as the request flow: no clashing booking, and for
+  // "now" the worker must be switched to available.
+  const fit = canTakeJob(worker, draft, await engagedJobsFor(worker.id));
+  if (!fit.ok) {
+    const msg = fit.reason === 'offline' ? 'This worker is offline right now. Schedule a time instead.' : fit.reason === 'outside_hours' ? 'That time is outside this worker\'s working hours.' : 'This worker already has a booking at that time.';
+    throw conflict(`worker_${fit.reason}`, msg);
+  }
+
+  const job = await db.jobs.insert({
+    ...draft,
+    status: JOB_STATUS.CONFIRMED,
+    workerId: worker.id,
+    agreedPrice: price,
+    timeline: [
+      { status: JOB_STATUS.PENDING, at: nowIso, by: customer.id },
+      { status: JOB_STATUS.CONFIRMED, at: nowIso, by: customer.id },
+    ],
+  });
+  // Guard against a booking that landed in the same slot at the same moment.
+  if (findConflict(worker.id, jobSlot(job), await engagedJobsFor(worker.id), job.id)) {
+    await db.jobs.update(job.id, { status: JOB_STATUS.CANCELLED, cancelReason: 'slot_taken' });
+    throw conflict('worker_conflict', 'This worker was just booked for the same time by someone else');
+  }
+
+  // Re-use the profile chat (inquiry) so the conversation continues in one place.
+  const inquiry = input.conversationId ? await db.proposals.findById(input.conversationId) : null;
+  const usable = inquiry && inquiry.customerId === customer.id && inquiry.workerId === worker.id && inquiry.status === PROPOSAL_STATUS.INQUIRY;
+  const patch = { jobId: job.id, status: PROPOSAL_STATUS.SELECTED, price, priceBy: customer.id, priceAgreed: true, updatedAt: nowIso };
+  const proposal = usable
+    ? await db.proposals.update(inquiry.id, patch)
+    : await db.proposals.insert({ id: newId('p_'), workerId: worker.id, customerId: customer.id, lastMessageAt: nowIso, createdAt: nowIso, ...patch });
+
+  await systemMessage(proposal, 'booking_confirmed', { amount: price });
+  await notify(worker.id, 'booking_confirmed', { name: customer.name, title: job.title, amount: price }, `/jobs/${job.id}`);
+  emitToUser(worker.id, 'job:update', { jobId: job.id, status: job.status });
+  return { job, conversationId: proposal.id };
 }

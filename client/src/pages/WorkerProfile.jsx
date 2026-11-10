@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import { ArrowLeft, MapPin, Clock, Banknote, Sparkles, ShieldCheck, ArrowRight, MessageCircle, CalendarDays, BarChart3 } from 'lucide-react';
+import { ArrowLeft, MapPin, Clock, Banknote, Sparkles, ShieldCheck, ArrowRight, MessageCircle, CalendarDays, CalendarCheck, BarChart3 } from 'lucide-react';
 import { useI18n } from '../i18n/I18nProvider.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useToast } from '../context/ToastContext.jsx';
@@ -11,6 +11,7 @@ import { AvailabilityBadge, DemoBadge, ErrorState, PageLoader, Stars, VerifiedCh
 import { SpeakButton, AudioPlayer } from '../components/voice.jsx';
 import { PortfolioImage } from '../components/WorkIllustration.jsx';
 import { ChatPanel } from './chat/ChatRoom.jsx';
+import BookWorkerDialog from '../components/BookWorkerDialog.jsx';
 
 export function ReviewItem({ review }) {
   const { t, tagLabel, timeAgo } = useI18n();
@@ -79,6 +80,7 @@ export default function WorkerProfile() {
   const [error, setError] = useState(null);
   const [sending, setSending] = useState(false);
   const [chatId, setChatId] = useState(null);
+  const [bookOpen, setBookOpen] = useState(false);
   const [openingChat, setOpeningChat] = useState(false);
   const wantsChat = params.get('chat') === '1';
 
@@ -304,6 +306,9 @@ export default function WorkerProfile() {
                 {sending ? <Spinner className="h-4 w-4" /> : <ArrowRight className="h-4 w-4 rtl:rotate-180" />} {t('sendRequest')}
               </button>
             )}
+            <button type="button" className="btn-amber btn-lg" onClick={() => setBookOpen(true)}>
+              <CalendarCheck className="h-5 w-5" /> {t('bookWorker')}
+            </button>
             <button type="button" className="btn-primary btn-lg" onClick={openChat} disabled={openingChat}>
               {openingChat ? <Spinner /> : <MessageCircle className="h-5 w-5" />} {t('chatWithWorker')}
             </button>
@@ -319,9 +324,13 @@ export default function WorkerProfile() {
             role="dialog"
             aria-label={t('chatWithName', { name: w.name })}
           >
-            <ChatPanel conversationId={chatId} embedded onClose={() => setChatId(null)} />
+            <ChatPanel conversationId={chatId} embedded onClose={() => setChatId(null)} onBook={() => setBookOpen(true)} />
           </div>
         </div>
+      )}
+
+      {me.role === 'customer' && (
+        <BookWorkerDialog open={bookOpen} onClose={() => setBookOpen(false)} worker={w} conversationId={chatId} />
       )}
     </div>
   );

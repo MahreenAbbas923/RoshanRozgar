@@ -7,6 +7,7 @@ import { findWorkers, workerWithStatus, workerDistance } from '../services/match
 import { summarizeReviewsFor } from '../services/ai.js';
 import { getArea, PROPOSAL_STATUS } from '../../../shared/index.js';
 import { notify } from '../services/notify.js';
+import { bookDirect } from '../services/booking.js';
 
 const router = Router();
 // Scoped to this router's paths: it is mounted on /api alongside other routers.
@@ -71,6 +72,17 @@ router.post(
     });
     await notify(worker.id, 'new_inquiry', { name: req.user.name }, `/chat/${proposal.id}`);
     res.status(201).json({ conversationId: proposal.id, created: true });
+  }),
+);
+
+// Customer confirms a booking straight from the worker's profile.
+router.post(
+  '/users/:id/book',
+  ah(async (req, res) => {
+    if (req.user.role !== 'customer') throw forbidden('wrong_role', 'Only customers can book a worker');
+    if (!req.user.profileComplete) throw forbidden('profile_incomplete', 'Please complete your profile first');
+    const result = await bookDirect(req.user, req.params.id, req.body || {});
+    res.status(201).json(result);
   }),
 );
 

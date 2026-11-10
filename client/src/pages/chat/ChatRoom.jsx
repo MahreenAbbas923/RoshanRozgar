@@ -27,7 +27,7 @@ export default function ChatRoom() {
 
 // The conversation itself. `embedded` renders it inside another page (the
 // worker's profile) without the job side panel; `onClose` replaces "back".
-export function ChatPanel({ conversationId: id, embedded = false, onClose }) {
+export function ChatPanel({ conversationId: id, embedded = false, onClose, onBook }) {
   const { t, has, price, catName, areaName, when: fmtWhen, sysMessage, lang } = useI18n();
   const { user } = useAuth();
   const toast = useToast();
@@ -227,6 +227,16 @@ export function ChatPanel({ conversationId: id, embedded = false, onClose }) {
           </Link>
           <ProposalStatusBadge status={conv.status} />
         </header>
+
+        {/* Profile chat: customer confirms the booking here once work and price are agreed */}
+        {isCustomer && onBook && conv.status === 'inquiry' && (
+          <div className="mx-4 mt-3 flex flex-wrap items-center gap-3 rounded-2xl border border-amber-500 bg-amber-100/50 px-4 py-3">
+            <span className="flex-1 text-sm font-semibold text-brand-900">{t('agreedInChatQ')}</span>
+            <button type="button" className="btn-amber" onClick={onBook}>
+              <CheckCircle2 className="h-4 w-4" /> {t('confirmBookingBtn')}
+            </button>
+          </div>
+        )}
 
         {/* Price strip */}
         {conv.price != null && !closed && (
