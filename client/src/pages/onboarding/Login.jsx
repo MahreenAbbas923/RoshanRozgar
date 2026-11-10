@@ -1,12 +1,13 @@
 // No phone number or PIN: people come back by tapping their account saved on
 // this device. Seeded demo accounts are one tap as well.
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { UserRound, HardHat, X, PlusCircle, ChevronRight } from 'lucide-react';
+import { UserRound, HardHat, X, PlusCircle, ChevronRight, Search, ChevronDown } from 'lucide-react';
 import { useI18n } from '../../i18n/I18nProvider.jsx';
 import { useAuth, homePathFor } from '../../context/AuthContext.jsx';
 import { useToast } from '../../context/ToastContext.jsx';
 import { errorText } from '../../services/api.js';
+import { authApi } from '../../services/index.js';
 import OnboardingHeader from '../../components/layout/OnboardingHeader.jsx';
 import Avatar from '../../components/Avatar.jsx';
 import { Spinner } from '../../components/ui.jsx';
@@ -14,7 +15,7 @@ import { SpeakButton } from '../../components/voice.jsx';
 
 export default function Login() {
   const { t, has } = useI18n();
-  const { continueAs, demoLogin, deviceAccounts, forgetAccount } = useAuth();
+  const { continueAs, demoLogin, demoLoginAs, deviceAccounts, forgetAccount } = useAuth();
   const toast = useToast();
   const navigate = useNavigate();
   const [busy, setBusy] = useState(null);
@@ -96,8 +97,77 @@ export default function Login() {
               </button>
             ))}
           </div>
+          <DemoAccountPicker busy={busy} onPick={(acc) => run(acc.id, () => demoLoginAs(acc.id))} />
         </section>
       </main>
+    </div>
+  );
+}
+
+// Every seeded demo customer and worker, searchable, one tap to open.
+function DemoAccountPicker({ busy, onPick }) {
+  const { t, catName, areaShort } = useI18n();
+  const [open, setOpen] = useState(false);
+  const [list, setList] = useState(null);
+  const [q, setQ] = useState('');
+
+  useEffect(() => {
+    if (open && !list) authApi.demoAccounts().then((r) => setList(r.accounts)).catch(() => setList([]));
+  }, [open, list]);
+
+  const query = q.trim().toLowerCase();
+  const shown = (list || []).filter((a) => {
+    if (!query) return true;
+    const trades = (a.skills || []).map((s) => `${s} ${catName(s)}`).join(' ');
+    return `${a.name} ${a.area} ${trades}`.toLowerCase().includes(query);
+  });
+
+  return (
+    <div className="mt-3">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        aria-expanded={open}
+        className="flex w-full items-center justify-between rounded-xl px-1 py-2 text-sm font-semibold text-brand-700"
+      >
+        {t('allDemoAccounts')}
+        <ChevronDown className={`h-4 w-4 transition ${open ? 'rotate-180' : ''}`} />
+      </button>
+      {open && (
+        <div className="space-y-2">
+          <label className="relative block">
+            <Search className="pointer-events-none absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-500" />
+            <input className="input py-2 ps-9 text-sm" value={q} onChange={(e) => setQ(e.target.value)} placeholder={t('searchDemo')} aria-label={t('searchDemo')} />
+          </label>
+          {!list ? (
+            <p className="flex items-center gap-2 py-2 text-sm text-ink-500">
+              <Spinner className="h-4 w-4" /> {t('loading')}
+            </p>
+          ) : (
+            <ul className="max-h-80 space-y-1 overflow-y-auto">
+              {shown.map((a) => (
+                <li key={a.id}>
+                  <button
+                    type="button"
+                    disabled={!!busy}
+                    onClick={() => onPick(a)}
+                    className="flex w-full items-center gap-3 rounded-xl bg-white px-3 py-2 text-start hover:bg-cream-100"
+                  >
+                    <Avatar user={a} size={36} />
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-sm font-semibold text-brand-900">{a.name}</span>
+                      <span className="block truncate text-xs text-ink-500">
+                        {a.role === 'worker' ? (a.skills || []).map(catName).join(', ') : t('customer')} · {areaShort(a.area)}
+                      </span>
+                    </span>
+                    {busy === a.id && <Spinner className="h-4 w-4" />}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
     </div>
   );
 }

@@ -58,14 +58,34 @@ router.post(
   }),
 );
 
-// One-tap sign-in to the seeded demo accounts (for judges / demos).
+// Seeded demo accounts that can be opened with one tap (judges / testing).
+// Only records marked isDemo are listed or reachable this way.
+router.get(
+  '/demo-accounts',
+  ah(async (_req, res) => {
+    const users = await db.users.find({ isDemo: true });
+    res.json({
+      accounts: users
+        .map((u) => ({ id: u.id, name: u.name, role: u.role, skills: u.skills, area: u.location?.area, avatar: u.avatar, avatarSeed: u.avatarSeed, gender: u.gender }))
+        .sort((a, b) => a.role.localeCompare(b.role) || a.name.localeCompare(b.name)),
+    });
+  }),
+);
+
+// One-tap sign-in to a seeded demo account: by `userId`, or by `role` for the
+// two featured accounts (Sara = customer, Ali Khan = worker).
 router.post(
   '/demo-login',
   ah(async (req, res) => {
-    const demo = DEMO_ACCOUNTS[req.body?.role];
-    if (!demo) throw badRequest('bad_role', 'Unknown demo account');
-    const user = await db.users.findOne({ phone: demo.phone, isDemo: true });
-    if (!user) throw notFound('demo_missing', 'Demo data not loaded. Run npm run seed.');
+    let user = null;
+    if (req.body?.userId) {
+      user = await db.users.findOne({ id: String(req.body.userId), isDemo: true });
+    } else {
+      const demo = DEMO_ACCOUNTS[req.body?.role];
+      if (!demo) throw badRequest('bad_role', 'Unknown demo account');
+      user = await db.users.findOne({ phone: demo.phone, isDemo: true });
+    }
+    if (!user) throw notFound('demo_missing', 'Demo account not found. Run npm run seed.');
     res.json({ token: signToken(user), user: await withStatus(user) });
   }),
 );

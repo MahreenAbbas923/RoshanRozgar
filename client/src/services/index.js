@@ -4,6 +4,8 @@ import { api } from './api.js';
 export const authApi = {
   signup: (body) => api('/auth/signup', { method: 'POST', body }),
   demoLogin: (role) => api('/auth/demo-login', { method: 'POST', body: { role } }),
+  demoLoginAs: (userId) => api('/auth/demo-login', { method: 'POST', body: { userId } }),
+  demoAccounts: () => api('/auth/demo-accounts'),
   me: () => api('/auth/me'),
 };
 

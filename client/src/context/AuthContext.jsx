@@ -93,6 +93,7 @@ export function AuthProvider({ children }) {
     [applySession, lang],
   );
   const demoLogin = useCallback(async (role) => applySession(await authApi.demoLogin(role)), [applySession]);
+  const demoLoginAs = useCallback(async (userId) => applySession(await authApi.demoLoginAs(userId)), [applySession]);
 
   // One tap on a remembered account.
   const continueAs = useCallback(
@@ -154,8 +155,8 @@ export function AuthProvider({ children }) {
   );
 
   const value = useMemo(
-    () => ({ user, setUser, status, signup, demoLogin, continueAs, deviceAccounts, forgetAccount, logout, refresh, saveProfile, changeLanguage }),
-    [user, status, signup, demoLogin, continueAs, deviceAccounts, forgetAccount, logout, refresh, saveProfile, changeLanguage],
+    () => ({ user, setUser, status, signup, demoLogin, demoLoginAs, continueAs, deviceAccounts, forgetAccount, logout, refresh, saveProfile, changeLanguage }),
+    [user, status, signup, demoLogin, demoLoginAs, continueAs, deviceAccounts, forgetAccount, logout, refresh, saveProfile, changeLanguage],
   );
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

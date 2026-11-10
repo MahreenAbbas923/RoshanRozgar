@@ -149,6 +149,8 @@ export const STRINGS = {
   removeFromDevice: { en: 'Remove from this device', ur: 'اس فون سے ہٹائیں', roman: 'Is phone se hatayein' },
   noDeviceAccounts: { en: 'No accounts on this device yet.', ur: 'اس فون پر ابھی کوئی اکاؤنٹ نہیں۔', roman: 'Is phone par abhi koi account nahi.' },
   createNewAccount: { en: 'Create a new account', ur: 'نیا اکاؤنٹ بنائیں', roman: 'Naya account banayein' },
+  allDemoAccounts: { en: 'All demo accounts', ur: 'تمام ڈیمو اکاؤنٹس', roman: 'Tamam demo accounts' },
+  searchDemo: { en: 'Search by name, trade or area', ur: 'نام، کام یا علاقے سے تلاش کریں', roman: 'Naam, kaam ya ilaqay se talaash karein' },
   demoOneTap: { en: 'Seeded demo accounts — one tap, no password', ur: 'ڈیمو اکاؤنٹس — ایک ٹیپ، کوئی پاس ورڈ نہیں', roman: 'Demo accounts — aik tap, koi password nahi' },
 
   // ---- Profile creation ----
