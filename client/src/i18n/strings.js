@@ -149,6 +149,13 @@ export const STRINGS = {
   removeFromDevice: { en: 'Remove from this device', ur: 'اس فون سے ہٹائیں', roman: 'Is phone se hatayein' },
   noDeviceAccounts: { en: 'No accounts on this device yet.', ur: 'اس فون پر ابھی کوئی اکاؤنٹ نہیں۔', roman: 'Is phone par abhi koi account nahi.' },
   createNewAccount: { en: 'Create a new account', ur: 'نیا اکاؤنٹ بنائیں', roman: 'Naya account banayein' },
+  chatWithWorker: { en: 'Chat', ur: 'بات کریں', roman: 'Chat karein' },
+  chatWithName: { en: 'Chat with {name}', ur: '{name} سے بات کریں', roman: '{name} se baat karein' },
+  hideDemo: { en: 'Hide demo profiles', ur: 'ڈیمو پروفائل چھپائیں', roman: 'Demo profiles chhupayein' },
+  anyDistance: { en: 'Any', ur: 'کوئی بھی', roman: 'Koi bhi' },
+  prop_inquiry: { en: 'Chat', ur: 'بات چیت', roman: 'Chat' },
+  notif_new_inquiry: { en: '{name} wants to chat with you', ur: '{name} آپ سے بات کرنا چاہتے ہیں', roman: '{name} aap se baat karna chahte hain' },
+  noWorkersYet: { en: 'No workers in this category yet', ur: 'اس شعبے میں ابھی کوئی کاریگر نہیں', roman: 'Is shobay mein abhi koi kaarigar nahi' },
   allDemoAccounts: { en: 'All demo accounts', ur: 'تمام ڈیمو اکاؤنٹس', roman: 'Tamam demo accounts' },
   searchDemo: { en: 'Search by name, trade or area', ur: 'نام، کام یا علاقے سے تلاش کریں', roman: 'Naam, kaam ya ilaqay se talaash karein' },
   demoOneTap: { en: 'Seeded demo accounts — one tap, no password', ur: 'ڈیمو اکاؤنٹس — ایک ٹیپ، کوئی پاس ورڈ نہیں', roman: 'Demo accounts — aik tap, koi password nahi' },
@@ -301,7 +308,7 @@ export const STRINGS = {
   reason_skill: { en: 'Does {skill}', ur: '{skill} کا کام', roman: '{skill} ka kaam' },
   forJob: { en: 'For: {title}', ur: 'برائے: {title}', roman: 'Baraye: {title}' },
   browseWorkers: { en: 'Browse workers', ur: 'کاریگر دیکھیں', roman: 'Kaarigar dekhein' },
-  browseHint: { en: 'To contact a worker, first describe your job so they know what you need.', ur: 'کاریگر سے رابطے کے لیے پہلے اپنا کام بتائیں تاکہ انہیں معلوم ہو۔', roman: 'Kaarigar se rabtay ke liye pehle apna kaam batayein taake unhein maloom ho.' },
+  browseHint: { en: 'Tap Chat to talk to any worker directly, or describe your job to get the best matches.', ur: 'کسی بھی کاریگر سے بات کرنے کے لیے بات کریں دبائیں، یا بہترین میچ کے لیے اپنا کام بتائیں۔', roman: 'Kisi bhi kaarigar se baat karne ke liye Chat dabayein, ya behtareen match ke liye apna kaam batayein.' },
   showBusyToo: { en: 'Show busy & offline too', ur: 'مصروف اور آف لائن بھی دکھائیں', roman: 'Masroof aur offline bhi dikhayein' },
 
   // ---- Status ----

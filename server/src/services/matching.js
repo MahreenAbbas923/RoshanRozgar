@@ -45,7 +45,7 @@ function scoreWorker(w, distance, maxKm, job) {
  *  maxPrice, onlyAvailable (default true), q (name search), sort
  */
 export async function findWorkers(opts = {}) {
-  const { category, origin, job, maxKm = 10, minRating = 0, maxPrice, onlyAvailable = true, q, sort = 'best' } = opts;
+  const { category, origin, job, maxKm = 10, minRating = 0, maxPrice, onlyAvailable = true, q, sort = 'best', excludeDemo = false } = opts;
   const filter = { role: 'worker', profileComplete: true };
   if (category && category !== 'all') filter.skills = category;
   const workers = await db.users.find(filter);
@@ -55,6 +55,7 @@ export async function findWorkers(opts = {}) {
   const results = [];
   let hiddenBusy = 0;
   for (const w of workers) {
+    if (excludeDemo && w.isDemo) continue;
     const distance = workerDistance(w, origin);
     const covers = coversArea(w, origin);
     if (origin && distance != null && distance > maxKm && !covers) continue;
@@ -90,7 +91,9 @@ export async function findWorkers(opts = {}) {
     price: (a, b) => a.rate - b.rate,
     experience: (a, b) => b.experienceYears - a.experienceYears,
   };
-  results.sort(sorters[sort] || sorters.best);
+  // Real people who signed up come before seeded demo profiles.
+  const bySort = sorters[sort] || sorters.best;
+  results.sort((a, b) => Number(!!a.isDemo) - Number(!!b.isDemo) || bySort(a, b));
   return { workers: results, hiddenBusy };
 }
 

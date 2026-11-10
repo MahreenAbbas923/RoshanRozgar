@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, MapPin, Clock, Banknote, Sparkles, ShieldCheck, ArrowRight, MessageCircle, CalendarDays, BarChart3 } from 'lucide-react';
 import { useI18n } from '../i18n/I18nProvider.jsx';
@@ -10,6 +10,7 @@ import Avatar from '../components/Avatar.jsx';
 import { AvailabilityBadge, DemoBadge, ErrorState, PageLoader, Stars, VerifiedChip, Spinner, CategoryIcon } from '../components/ui.jsx';
 import { SpeakButton, AudioPlayer } from '../components/voice.jsx';
 import { PortfolioImage } from '../components/WorkIllustration.jsx';
+import { ChatPanel } from './chat/ChatRoom.jsx';
 
 export function ReviewItem({ review }) {
   const { t, tagLabel, timeAgo } = useI18n();
@@ -77,6 +78,31 @@ export default function WorkerProfile() {
   const [job, setJob] = useState(null);
   const [error, setError] = useState(null);
   const [sending, setSending] = useState(false);
+  const [chatId, setChatId] = useState(null);
+  const [openingChat, setOpeningChat] = useState(false);
+  const wantsChat = params.get('chat') === '1';
+
+  // Chat with this worker right here on the profile (no job needed).
+  const openChat = useCallback(async () => {
+    setOpeningChat(true);
+    try {
+      const { conversationId } = await workersApi.startChat(id);
+      setChatId(conversationId);
+    } catch (err) {
+      toast.error(errorText(err, t, has));
+    } finally {
+      setOpeningChat(false);
+    }
+  }, [id, toast, t, has]);
+
+  // Open automatically when arriving from a worker card's "Chat" button (once).
+  const autoOpened = useRef(false);
+  useEffect(() => {
+    if (wantsChat && me.role === 'customer' && !autoOpened.current) {
+      autoOpened.current = true;
+      openChat();
+    }
+  }, [wantsChat, me.role, openChat]);
 
   const load = useCallback(async () => {
     try {
@@ -273,15 +299,27 @@ export default function WorkerProfile() {
                 <CategoryIcon category={w.skills[0]} className="inline h-3 w-3" /> {catName(w.skills[0])} · {t(`st_${w.status}`)}
               </p>
             </div>
-            {canRequest ? (
-              <button type="button" className="btn-primary btn-lg" onClick={sendRequest} disabled={sending}>
-                {sending ? <Spinner /> : <MessageCircle className="h-5 w-5" />} {t('sendRequest')}
+            {canRequest && (
+              <button type="button" className="btn-outline hidden sm:inline-flex" onClick={sendRequest} disabled={sending}>
+                {sending ? <Spinner className="h-4 w-4" /> : <ArrowRight className="h-4 w-4 rtl:rotate-180" />} {t('sendRequest')}
               </button>
-            ) : (
-              <Link to="/jobs/new" className="btn-primary btn-lg">
-                {t('chooseJobFirst')} <ArrowRight className="h-5 w-5 rtl:rotate-180" />
-              </Link>
             )}
+            <button type="button" className="btn-primary btn-lg" onClick={openChat} disabled={openingChat}>
+              {openingChat ? <Spinner /> : <MessageCircle className="h-5 w-5" />} {t('chatWithWorker')}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {chatId && (
+        <div className="fixed inset-0 z-40 bg-brand-950/30 lg:bg-transparent" onClick={() => setChatId(null)}>
+          <div
+            className="absolute inset-0 bg-white p-2 lg:inset-auto lg:bottom-4 lg:end-4 lg:top-20 lg:w-[27rem] lg:rounded-3xl lg:p-0 lg:shadow-lift"
+            onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-label={t('chatWithName', { name: w.name })}
+          >
+            <ChatPanel conversationId={chatId} embedded onClose={() => setChatId(null)} />
           </div>
         </div>
       )}

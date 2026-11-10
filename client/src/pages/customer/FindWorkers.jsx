@@ -15,6 +15,7 @@ import { CategoryIcon, EmptyState, ErrorState, PageLoader, Segmented, Spinner } 
 
 const WorkersMap = lazy(() => import('../../components/WorkersMap.jsx'));
 const DISTANCES = [2, 5, 10, 25];
+const ANY = 0; // browsing: no distance limit
 
 export default function FindWorkers() {
   const { id: jobId } = useParams();
@@ -29,11 +30,12 @@ export default function FindWorkers() {
   const [result, setResult] = useState(null);
   const [error, setError] = useState(null);
   const [view, setView] = useState('list');
-  const [maxKm, setMaxKm] = useState(10);
+  const [maxKm, setMaxKm] = useState(jobId ? 10 : ANY);
   const [minRating, setMinRating] = useState(0);
   const [sort, setSort] = useState('best');
   const [q, setQ] = useState('');
-  const [showAll, setShowAll] = useState(false);
+  const [showAll, setShowAll] = useState(true);
+  const [hideDemo, setHideDemo] = useState(false);
   const [sending, setSending] = useState(null);
   const category = params.get('category') || '';
 
@@ -45,12 +47,22 @@ export default function FindWorkers() {
         setJob(j);
         setResult(m);
       } else {
-        setResult(await workersApi.search({ category, maxKm, minRating, sort, q, onlyAvailable: showAll ? 'false' : 'true' }));
+        setResult(
+          await workersApi.search({
+            category,
+            maxKm: maxKm || undefined,
+            minRating,
+            sort,
+            q,
+            onlyAvailable: showAll ? 'false' : 'true',
+            excludeDemo: hideDemo ? 'true' : undefined,
+          }),
+        );
       }
     } catch (err) {
       setError(errorText(err, t, has));
     }
-  }, [jobId, maxKm, minRating, sort, q, category, showAll, t, has]);
+  }, [jobId, maxKm, minRating, sort, q, category, showAll, hideDemo, t, has]);
 
   useEffect(() => {
     const timer = setTimeout(load, q ? 300 : 0);
@@ -125,14 +137,14 @@ export default function FindWorkers() {
 
       <div className="flex flex-wrap items-center gap-2">
         <span className="text-sm font-semibold text-brand-900">{t('distance')}</span>
-        {DISTANCES.map((d) => (
+        {(jobId ? DISTANCES : [ANY, ...DISTANCES]).map((d) => (
           <button
             key={d}
             type="button"
             onClick={() => setMaxKm(d)}
             className={`rounded-full px-3 py-1.5 text-sm font-semibold ${maxKm === d ? 'bg-brand-900 text-white' : 'border border-cream-200 bg-cream-100 text-brand-900'}`}
           >
-            {d} km
+            {d === ANY ? t('anyDistance') : `${d} km`}
           </button>
         ))}
         <button
@@ -159,6 +171,11 @@ export default function FindWorkers() {
             <input type="checkbox" checked={showAll} onChange={(e) => setShowAll(e.target.checked)} className="h-4 w-4 accent-brand-600" /> {t('showBusyToo')}
           </label>
         )}
+        {!jobId && (
+          <label className="flex items-center gap-2 text-sm text-ink-700">
+            <input type="checkbox" checked={hideDemo} onChange={(e) => setHideDemo(e.target.checked)} className="h-4 w-4 accent-brand-600" /> {t('hideDemo')}
+          </label>
+        )}
         <span className="ms-auto text-sm text-ink-500">{t('availableNowCount', { n: workers.filter((w) => w.canTake).length })}</span>
       </div>
 
@@ -179,6 +196,7 @@ export default function FindWorkers() {
               title={t('noWorkersTitle')}
               hint={t('noWorkersHint')}
               action={
+                maxKm !== ANY &&
                 maxKm < 25 && (
                   <button type="button" className="btn-outline mt-2" onClick={() => setMaxKm(25)}>
                     {t('widenSearch')}
@@ -189,15 +207,24 @@ export default function FindWorkers() {
           ) : (
             workers.map((w, i) => {
               const contacted = result.contacted?.[w.id];
-              let action = (
+              const profileLink = (
                 <Link to={`/workers/${w.id}${jobId ? `?job=${jobId}` : ''}`} className="btn-outline">
                   {t('viewProfile')}
                 </Link>
               );
+              // Chat opens inside the worker's profile.
+              let action = (
+                <>
+                  {profileLink}
+                  <Link to={`/workers/${w.id}?chat=1${jobId ? `&job=${jobId}` : ''}`} className="btn-primary">
+                    <MessageCircle className="h-4 w-4" /> {t('chatWithWorker')}
+                  </Link>
+                </>
+              );
               if (jobId && jobOpen) {
                 action = (
                   <>
-                    {action}
+                    {profileLink}
                     {contacted ? (
                       <Link to={`/chat/${contacted.proposalId}`} className="btn-primary">
                         <MessageCircle className="h-4 w-4" /> {t('openChat')}
@@ -224,7 +251,7 @@ export default function FindWorkers() {
         {view === 'map' && (
           <div className="order-1 lg:order-2">
             <Suspense fallback={<PageLoader />}>
-              <WorkersMap workers={workers} origin={origin} radiusKm={maxKm} jobId={jobId} />
+              <WorkersMap workers={workers} origin={origin} radiusKm={maxKm || null} jobId={jobId} />
             </Suspense>
           </div>
         )}

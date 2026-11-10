@@ -11,6 +11,7 @@ import { SpeakButton, AudioPlayer } from '../../components/voice.jsx';
 import { CategoryIcon, EmptyState, ErrorState, Modal, PageLoader, Spinner, Toggle, Stars } from '../../components/ui.jsx';
 import { MessagePreview } from '../chat/Inbox.jsx';
 import TaskList from './TaskList.jsx';
+import Avatar from '../../components/Avatar.jsx';
 
 export default function WorkerDashboard() {
   const { t, has, catName, price, timeAgo, areaShort } = useI18n();
@@ -175,6 +176,30 @@ export default function WorkerDashboard() {
               </div>
             )}
           </section>
+
+          {data.inquiries?.length > 0 && (
+            <section>
+              <h2 className="section-title mb-3">{t('newInquiries')}</h2>
+              <ul className="card divide-y divide-ink-300/30 overflow-hidden">
+                {data.inquiries.map((p) => (
+                  <li key={p.id}>
+                    <Link to={`/chat/${p.id}`} className="flex items-center gap-3 px-4 py-3 hover:bg-cream-50">
+                      <Avatar user={p.customer} size={44} />
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate font-semibold text-brand-900">{p.customer?.name}</p>
+                        <p className={`truncate text-sm ${p.unread ? 'font-semibold text-ink-900' : 'text-ink-500'}`}>
+                          {p.lastMessage ? <MessagePreview m={p.lastMessage} /> : t('chatWithWorker')}
+                        </p>
+                      </div>
+                      {p.unread > 0 && (
+                        <span className="flex h-6 min-w-6 items-center justify-center rounded-full bg-amber-500 px-1.5 text-xs font-bold text-brand-950">{p.unread}</span>
+                      )}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
 
           <TaskList jobs={data.jobs} negotiating={data.negotiating} />
         </div>

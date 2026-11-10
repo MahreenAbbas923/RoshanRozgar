@@ -19,8 +19,15 @@ import { PortfolioImage } from '../../components/WorkIllustration.jsx';
 const QUICK_WORKER = ['quickYes', 'quickNo', 'quickWhen', 'quickOnWay', 'quickPhoto', 'quickAddress'];
 const QUICK_CUSTOMER = ['quickYes', 'quickNo', 'quickHowSoon', 'quickPhoto'];
 
+// Page at /chat/:id (opened from notifications and the worker's chat list).
 export default function ChatRoom() {
   const { id } = useParams();
+  return <ChatPanel conversationId={id} />;
+}
+
+// The conversation itself. `embedded` renders it inside another page (the
+// worker's profile) without the job side panel; `onClose` replaces "back".
+export function ChatPanel({ conversationId: id, embedded = false, onClose }) {
   const { t, has, price, catName, areaName, when: fmtWhen, sysMessage, lang } = useI18n();
   const { user } = useAuth();
   const toast = useToast();
@@ -173,8 +180,12 @@ export default function ChatRoom() {
   if (!conv) return <PageLoader />;
 
   return (
-    <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_20rem]">
-      <section className="card flex h-[calc(100vh-11rem)] min-h-[520px] flex-col overflow-hidden lg:h-[calc(100vh-8.5rem)]">
+    <div className={embedded ? 'h-full' : job ? 'grid grid-cols-1 gap-6 lg:grid-cols-[1fr_20rem]' : 'mx-auto max-w-3xl'}>
+      <section
+        className={`card flex flex-col overflow-hidden ${
+          embedded ? 'h-full min-h-[460px]' : 'h-[calc(100vh-11rem)] min-h-[520px] lg:h-[calc(100vh-8.5rem)]'
+        }`}
+      >
         {/* Booking banner */}
         {conv.status === 'selected' && job && ['confirmed', 'in_progress', 'completed'].includes(job.status) && (
           <div className="flex items-center gap-3 bg-brand-600 px-4 py-3 text-white">
@@ -193,9 +204,17 @@ export default function ChatRoom() {
 
         {/* Header */}
         <header className="flex items-center gap-3 border-b border-ink-300/30 px-4 py-3">
-          <button type="button" className="icon-btn h-9 w-9 lg:hidden" onClick={() => navigate('/chat')} aria-label={t('back')}>
-            <ArrowLeft className="h-4 w-4 rtl:rotate-180" />
-          </button>
+          {embedded ? (
+            onClose && (
+              <button type="button" className="icon-btn h-9 w-9" onClick={onClose} aria-label={t('close')}>
+                <X className="h-4 w-4" />
+              </button>
+            )
+          ) : (
+            <button type="button" className="icon-btn h-9 w-9 lg:hidden" onClick={() => navigate(isCustomer ? -1 : '/chat')} aria-label={t('back')}>
+              <ArrowLeft className="h-4 w-4 rtl:rotate-180" />
+            </button>
+          )}
           <Link to={isCustomer ? `/workers/${other?.id}` : `/users/${other?.id}`} className="flex flex-1 items-center gap-3">
             <Avatar user={other} size={44} />
             <div className="min-w-0">
@@ -369,8 +388,8 @@ export default function ChatRoom() {
         )}
       </section>
 
-      {/* Job side panel */}
-      <aside className="hidden space-y-3 lg:block">
+      {/* Job side panel (only for chats about a job, on the full page) */}
+      <aside className={embedded || !job ? 'hidden' : 'hidden space-y-3 lg:block'}>
         <div className="card overflow-hidden">
           {job?.images?.[0] ? (
             <div className="h-40">

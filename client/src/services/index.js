@@ -31,6 +31,7 @@ export const jobsApi = {
 export const workersApi = {
   search: (query) => api('/workers', { query }),
   profile: (id) => api(`/users/${id}`),
+  startChat: (id) => api(`/users/${id}/chat`, { method: 'POST' }),
 };
 
 export const chatApi = {

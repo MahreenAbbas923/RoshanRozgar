@@ -16,6 +16,7 @@ export const JOB_STATUS = {
 
 // Status of one worker's involvement with one job (a "proposal").
 export const PROPOSAL_STATUS = {
+  INQUIRY: 'inquiry', // customer chatting with a worker from the profile, no job yet
   REQUESTED: 'requested', // customer asked this worker
   ACCEPTED: 'accepted', // worker is interested and can quote a price
   DECLINED: 'declined', // worker said no

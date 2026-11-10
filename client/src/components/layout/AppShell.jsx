@@ -21,7 +21,6 @@ function navItems(role) {
   return [
     { to: '/customer', key: 'navHome', icon: Home, end: true },
     { to: '/workers', key: 'navFind', icon: Search },
-    { to: '/chat', key: 'navMessages', icon: MessageCircle },
     { to: '/bookings', key: 'navBookings', icon: CalendarCheck },
     { to: '/profile', key: 'navProfile', icon: User },
   ];

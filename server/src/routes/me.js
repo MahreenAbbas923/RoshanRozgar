@@ -74,6 +74,7 @@ router.get(
       completion: completion(u),
       requests: proposals.filter((p) => p.status === PROPOSAL_STATUS.REQUESTED && ['pending', 'in_discussion'].includes(p.job?.status)),
       negotiating: proposals.filter((p) => p.status === PROPOSAL_STATUS.ACCEPTED && ['pending', 'in_discussion'].includes(p.job?.status)),
+      inquiries: proposals.filter((p) => p.status === PROPOSAL_STATUS.INQUIRY),
       jobs,
       earnings,
       reviews,

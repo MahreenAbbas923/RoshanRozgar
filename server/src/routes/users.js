@@ -1,11 +1,12 @@
 import { Router } from 'express';
-import { db } from '../db/index.js';
-import { ah, notFound } from '../utils/http.js';
+import { db, newId } from '../db/index.js';
+import { ah, notFound, forbidden } from '../utils/http.js';
 import { requireAuth } from '../middleware/auth.js';
 import { publicView, miniView } from '../services/users.js';
 import { findWorkers, workerWithStatus, workerDistance } from '../services/matching.js';
 import { summarizeReviewsFor } from '../services/ai.js';
-import { getArea } from '../../../shared/index.js';
+import { getArea, PROPOSAL_STATUS } from '../../../shared/index.js';
+import { notify } from '../services/notify.js';
 
 const router = Router();
 // Scoped to this router's paths: it is mounted on /api alongside other routers.
@@ -20,14 +21,56 @@ router.get(
     const result = await findWorkers({
       category: q.category,
       origin,
-      maxKm: Number(q.maxKm) || 10,
+      // Browsing a category shows every worker unless the customer picks a distance.
+      maxKm: Number(q.maxKm) || 1000,
       minRating: Number(q.minRating) || 0,
       maxPrice: Number(q.maxPrice) || undefined,
       q: q.q,
       sort: q.sort,
       onlyAvailable: q.onlyAvailable === 'true',
+      excludeDemo: q.excludeDemo === 'true',
     });
     res.json(result);
+  }),
+);
+
+// Customer opens a chat from a worker's profile. Re-uses the latest open
+// conversation with that worker; otherwise starts a job-less "inquiry" chat.
+router.post(
+  '/users/:id/chat',
+  ah(async (req, res) => {
+    if (req.user.role !== 'customer') throw forbidden('wrong_role', 'Only customers can start a chat from a profile');
+    if (!req.user.profileComplete) throw forbidden('profile_incomplete', 'Please complete your profile first');
+    const worker = await db.users.findById(req.params.id);
+    if (!worker || worker.role !== 'worker' || !worker.profileComplete) throw notFound('worker_not_found', 'Worker not found');
+
+    // Re-use an open inquiry, or a conversation whose job is still active;
+    // finished jobs keep their own history and a new chat starts instead.
+    const existing = await db.proposals.find({ customerId: req.user.id, workerId: worker.id }, { sort: { updatedAt: -1 } });
+    const jobIds = existing.map((p) => p.jobId).filter(Boolean);
+    const jobs = jobIds.length ? await db.jobs.find({ id: { $in: jobIds } }) : [];
+    const activeJob = (p) => ['pending', 'in_discussion', 'confirmed', 'in_progress'].includes(jobs.find((j) => j.id === p.jobId)?.status);
+    const open = existing.find(
+      (p) => (p.status === PROPOSAL_STATUS.INQUIRY || activeJob(p)) && !['closed', 'declined', 'cancelled'].includes(p.status),
+    );
+    if (open) return res.json({ conversationId: open.id, created: false });
+
+    const now = new Date().toISOString();
+    const proposal = await db.proposals.insert({
+      id: newId('p_'),
+      jobId: null,
+      workerId: worker.id,
+      customerId: req.user.id,
+      status: PROPOSAL_STATUS.INQUIRY,
+      price: null,
+      priceBy: null,
+      priceAgreed: false,
+      lastMessageAt: now,
+      createdAt: now,
+      updatedAt: now,
+    });
+    await notify(worker.id, 'new_inquiry', { name: req.user.name }, `/chat/${proposal.id}`);
+    res.status(201).json({ conversationId: proposal.id, created: true });
   }),
 );
 
