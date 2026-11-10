@@ -1,0 +1,116 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    -webkit-tap-highlight-color: transparent;
+    font-size: 15px; /* all rem-based sizes scale from here */
+  }
+  html[lang='ur'] {
+    font-size: 14px; /* Nastaliq glyphs are tall; keep Urdu pages compact */
+  }
+  body {
+    @apply bg-white font-sans text-ink-900 antialiased;
+  }
+  h1,
+  h2,
+  h3 {
+    @apply font-display text-brand-900;
+  }
+  /* Urdu: Nastaliq needs more line height and slightly larger size to stay readable. */
+  html[lang='ur'] body,
+  html[lang='ur'] h1,
+  html[lang='ur'] h2,
+  html[lang='ur'] h3,
+  html[lang='ur'] button,
+  html[lang='ur'] input,
+  html[lang='ur'] textarea,
+  html[lang='ur'] select {
+    font-family: 'Noto Nastaliq Urdu', 'Inter', serif;
+  }
+  html[lang='ur'] body {
+    line-height: 1.85;
+  }
+  html[lang='ur'] h1,
+  html[lang='ur'] h2,
+  html[lang='ur'] h3 {
+    line-height: 1.7;
+  }
+  .ltr-text {
+    direction: ltr;
+    unicode-bidi: isolate;
+  }
+  :focus-visible {
+    @apply outline-none ring-2 ring-amber-500 ring-offset-2;
+  }
+}
+
+@layer components {
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  .btn-lg {
+    @apply px-6 py-3 text-[0.95rem];
+  }
+  .btn-primary {
+    @apply btn bg-brand-900 text-white hover:bg-brand-800 active:bg-brand-950;
+  }
+  .btn-amber {
+    @apply btn bg-amber-500 text-brand-950 hover:bg-amber-400;
+  }
+  .btn-outline {
+    @apply btn border-2 border-brand-900 bg-white text-brand-900 hover:bg-brand-50;
+  }
+  .btn-ghost {
+    @apply btn text-brand-700 hover:bg-brand-50;
+  }
+  .btn-danger {
+    @apply btn border-2 border-red-200 bg-white text-red-700 hover:bg-red-50;
+  }
+  .card {
+    @apply rounded-2xl border border-ink-300/30 bg-white shadow-card;
+  }
+  .chip {
+    @apply inline-flex items-center gap-1 rounded-full border border-cream-200 bg-cream-100 px-3 py-1 text-xs font-medium text-brand-900;
+  }
+  .input {
+    @apply w-full rounded-xl border border-ink-300/60 bg-white px-4 py-3 text-base text-ink-900 placeholder:text-ink-300 focus:border-brand-600 focus:outline-none focus:ring-2 focus:ring-brand-100;
+  }
+  .label {
+    @apply mb-1.5 block text-sm font-semibold text-brand-900;
+  }
+  .tile {
+    @apply flex flex-col items-center justify-center gap-2 rounded-2xl border border-cream-200 bg-cream-100 p-4 text-center font-semibold text-brand-900 transition hover:-translate-y-0.5 hover:shadow-card;
+  }
+  .icon-btn {
+    @apply inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-cream-200 bg-cream-100 text-brand-700 transition hover:bg-cream-200;
+  }
+  .section-title {
+    @apply font-display text-lg font-bold text-brand-900 sm:text-xl;
+  }
+}
+
+/* Leaflet map tweaks */
+.leaflet-container {
+  font-family: inherit;
+  border-radius: 1rem;
+}
+.worker-pin {
+  background: #0c3b37;
+  color: #fff;
+  border-radius: 999px;
+  padding: 2px 8px;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+}
+.you-pin {
+  width: 16px;
+  height: 16px;
+  border-radius: 999px;
+  background: #f29a1f;
+  border: 3px solid #fff;
+  box-shadow: 0 0 0 2px #f29a1f;
+}
