@@ -9,7 +9,7 @@ import { useAuth } from '../../context/AuthContext.jsx';
 import { useToast } from '../../context/ToastContext.jsx';
 import { useRealtime } from '../../context/RealtimeContext.jsx';
 import { useRecorder } from '../../hooks/useRecorder.js';
-import { chatApi, uploadFile } from '../../services/index.js';
+import { chatApi, jobsApi, uploadFile } from '../../services/index.js';
 import { errorText } from '../../services/api.js';
 import Avatar from '../../components/Avatar.jsx';
 import { AudioPlayer, WaveBars } from '../../components/voice.jsx';
@@ -41,6 +41,7 @@ export function ChatPanel({ conversationId: id, embedded = false, onClose, onBoo
   const [offerOpen, setOfferOpen] = useState(false);
   const [offerAmount, setOfferAmount] = useState('');
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [confirmWorkOpen, setConfirmWorkOpen] = useState(false);
   const [respondOpen, setRespondOpen] = useState(false);
   const [busyAction, setBusyAction] = useState(false);
   const [otherActivity, setOtherActivity] = useState(null);
@@ -202,6 +203,7 @@ export function ChatPanel({ conversationId: id, embedded = false, onClose, onBoo
           </div>
         )}
 
+
         {/* Header */}
         <header className="flex items-center gap-3 border-b border-ink-300/30 px-4 py-3">
           {embedded ? (
@@ -257,6 +259,17 @@ export function ChatPanel({ conversationId: id, embedded = false, onClose, onBoo
                 {t('confirmBookingFor', { amount: Number(conv.price).toLocaleString('en-PK') })}
               </button>
             )}
+          </div>
+        )}
+
+        {/* Confirm work done banner — shown to customer when job is in progress */}
+        {isCustomer && conv.status === 'selected' && job && job.status === 'in_progress' && (
+          <div className="mx-4 mt-3 flex flex-wrap items-center gap-3 rounded-2xl border border-brand-600 bg-brand-50 px-4 py-3">
+            <CheckCircle2 className="h-5 w-5 shrink-0 text-brand-600" />
+            <span className="flex-1 text-sm font-semibold text-brand-900">{t('completeConfirmQ')}</span>
+            <button type="button" className="btn-primary" onClick={() => setConfirmWorkOpen(true)}>
+              <CheckCircle2 className="h-4 w-4" /> {t('markComplete')}
+            </button>
           </div>
         )}
 
@@ -510,6 +523,36 @@ export function ChatPanel({ conversationId: id, embedded = false, onClose, onBoo
         }
       >
         <p className="text-ink-700">{t('confirmBookingQ', { name: other?.name, amount: Number(conv.price).toLocaleString('en-PK') })}</p>
+      </Modal>
+
+      {/* Customer confirms work is done */}
+      <Modal
+        open={confirmWorkOpen}
+        onClose={() => setConfirmWorkOpen(false)}
+        title={t('completeConfirmQ')}
+        footer={
+          <>
+            <button type="button" className="btn-ghost" onClick={() => setConfirmWorkOpen(false)}>
+              {t('cancel')}
+            </button>
+            <button
+              type="button"
+              className="btn-primary"
+              disabled={busyAction}
+              onClick={() =>
+                doAction(
+                  () => jobsApi.complete(job.id),
+                  () => setConfirmWorkOpen(false),
+                )
+              }
+            >
+              {busyAction && <Spinner className="h-4 w-4" />} {t('markComplete')}
+            </button>
+          </>
+        }
+      >
+        <p className="text-ink-700">{job?.title}</p>
+        {job?.agreedPrice && <p className="mt-1 font-display text-2xl font-bold text-brand-900">{conv.price ? `Rs ${Number(job.agreedPrice).toLocaleString('en-PK')}` : ''}</p>}
       </Modal>
     </div>
   );

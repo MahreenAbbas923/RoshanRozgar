@@ -127,7 +127,6 @@ export function WorkerProfileForm({ user, onSubmit, submitLabel }) {
   const [skills, setSkills] = useState(user.skills || []);
   const [subSkills, setSubSkills] = useState(user.subSkills || []);
   const [years, setYears] = useState(user.experienceYears || '');
-  const [rate, setRate] = useState(user.rate || '');
   const [bio, setBio] = useState(user.bio || '');
   const [baseArea, setBaseArea] = useState(user.location?.area || user.serviceAreas?.[0] || '');
   const [serviceAreas, setServiceAreas] = useState(user.serviceAreas || []);
@@ -158,7 +157,6 @@ export function WorkerProfileForm({ user, onSubmit, submitLabel }) {
         skills,
         subSkills: subSkills.filter((s) => suggestions.includes(s)),
         experienceYears: Number(years) || 0,
-        rate: Number(rate) || 0,
         bio,
         location: { area: baseArea },
         serviceAreas: [...new Set([baseArea, ...serviceAreas])],
@@ -209,12 +207,6 @@ export function WorkerProfileForm({ user, onSubmit, submitLabel }) {
             {t('fYears')}
           </label>
           <input id="years" type="number" inputMode="numeric" min="0" max="60" className="input" value={years} onChange={(e) => setYears(e.target.value)} />
-        </div>
-        <div>
-          <label htmlFor="rate" className="label">
-            {t('fRatePerVisit')}
-          </label>
-          <input id="rate" type="number" inputMode="numeric" min="0" step="50" className="input" value={rate} onChange={(e) => setRate(e.target.value)} />
         </div>
       </div>
       <AreaSelect label={`${t('fWorkArea')} *`} value={baseArea} onChange={(v) => setBaseArea(v)} id="baseArea" />

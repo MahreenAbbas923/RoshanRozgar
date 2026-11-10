@@ -2,7 +2,7 @@
 // voice-first wizard (no reading/typing needed); a short form is the fallback.
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Mic, FileText, Check, UserRound, Zap, MapPin, Clock, Banknote, Wrench, Sparkles, ArrowRight } from 'lucide-react';
+import { Mic, FileText, Check, UserRound, Zap, MapPin, Clock, Wrench, Sparkles, ArrowRight } from 'lucide-react';
 import { getCategory } from '@shared/constants.js';
 import { useI18n } from '../../i18n/I18nProvider.jsx';
 import { useAuth, homePathFor } from '../../context/AuthContext.jsx';
@@ -89,7 +89,7 @@ function MethodCard({ icon: Icon, title, desc, badge, onClick, speakKey, primary
 const STEPS = ['name', 'trade', 'area', 'exp', 'photo'];
 
 function WorkerVoiceWizard({ onDone, onExit }) {
-  const { t, catName, areaName, price } = useI18n();
+  const { t, catName, areaName } = useI18n();
   const { user } = useAuth();
   const [step, setStep] = useState(0); // index into STEPS, or STEPS.length for review
   const [returnToReview, setReturnToReview] = useState(false);
@@ -182,28 +182,23 @@ function WorkerVoiceWizard({ onDone, onExit }) {
       <VoiceQuestion
         questionKey="qExpRate"
         hintKey="qExpRateHint"
-        fields={['experience', 'rate']}
+        fields={['experience']}
         display={
-          p.experienceYears != null || p.rate != null
-            ? [p.experienceYears != null && t('yearsExp', { n: p.experienceYears }), p.rate && `${price(p.rate)} ${t('perVisit')}`].filter(Boolean).join(' · ')
+          p.experienceYears != null
+            ? t('yearsExp', { n: p.experienceYears })
             : ''
         }
         onResult={(r) =>
           set({
             experienceYears: r.experience ?? p.experienceYears,
-            rate: r.rate ?? p.rate,
           })
         }
         side={
           <>
-            <div className="card grid grid-cols-2 gap-3 p-5">
+            <div className="card p-5">
               <label className="text-sm font-semibold text-brand-900">
                 {t('fYears')}
                 <input type="number" inputMode="numeric" className="input mt-1" value={p.experienceYears ?? ''} onChange={(e) => set({ experienceYears: e.target.value === '' ? null : Number(e.target.value) })} />
-              </label>
-              <label className="text-sm font-semibold text-brand-900">
-                {t('fRate')}
-                <input type="number" inputMode="numeric" step="50" className="input mt-1" value={p.rate ?? ''} onChange={(e) => set({ rate: e.target.value === '' ? null : Number(e.target.value) })} />
               </label>
             </div>
             {nextBar}
@@ -249,7 +244,6 @@ function WorkerVoiceWizard({ onDone, onExit }) {
       { icon: Zap, label: 'fTrade', value: p.skills.map(catName).join(', '), step: 1 },
       { icon: MapPin, label: 'fWorkArea', value: p.area ? areaName(p.area) : '', step: 2 },
       { icon: Clock, label: 'fExperience', value: p.experienceYears != null ? t('yearsExp', { n: p.experienceYears }) : '–', step: 3 },
-      { icon: Banknote, label: 'fRate', value: p.rate ? `${price(p.rate)} ${t('perVisit')}` : '–', step: 3 },
       { icon: Wrench, label: 'fSkills', value: p.subSkills.join(', '), chips: p.subSkills, step: 1 },
     ];
     content = (
@@ -307,7 +301,6 @@ function WorkerVoiceWizard({ onDone, onExit }) {
                   skills: p.skills,
                   subSkills: p.subSkills,
                   experienceYears: p.experienceYears || 0,
-                  rate: p.rate || 0,
                   location: { area: p.area },
                   serviceAreas: [p.area],
                   avatar: p.avatar,
